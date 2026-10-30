@@ -164,7 +164,7 @@ nav.bottom .inner { max-width: 560px; margin: 0 auto; display: grid; grid-templa
 .ring .bgc { fill: none; stroke: var(--surface-2); stroke-width: 10; }
 .ring .fgc { fill: none; stroke: var(--phase); stroke-width: 10; stroke-linecap: round; transition: stroke .3s; }
 .ring-inner { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 2px; }
-.phase { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--phase); }
+.phase { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--phase); max-width: 78%; line-height: 1.1; text-wrap: balance; }
 .clock { font-family: var(--font-display); font-weight: 700; font-size: clamp(4.5rem, 22vw, 7.5rem); line-height: 0.95; font-variant-numeric: tabular-nums; }
 .round { color: var(--muted); font-size: 1rem; font-variant-numeric: tabular-nums; }
 .next { color: var(--muted); font-size: 0.95rem; min-height: 1.4em; }
@@ -172,7 +172,25 @@ nav.bottom .inner { max-width: 560px; margin: 0 auto; display: grid; grid-templa
 .run-controls .btn { font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .adjust { display: flex; gap: 10px; justify-content: center; }
 .adjust .btn { min-width: 84px; font-variant-numeric: tabular-nums; }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.search { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px 13px 44px; color: var(--fg); font: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238d95a3' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-size: 20px; background-position: 14px center; }
+.search:focus { border-color: var(--brand); outline: none; }
+.select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; color: var(--fg); font: inherit; max-width: 52vw; }
+.flash { position: fixed; inset: 0; z-index: 65; pointer-events: none; background: var(--phase); opacity: 0; }
+.flash.on { animation: flash 0.7s ease-out; }
+@keyframes flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+/* pale colours: softer stripes and phase colours */
+:root.pale { --c-orange: #e8b48f; --c-violet: #c9a6e0; --c-amber: #e9d08f; --c-red: #e8a0a7; --c-green: #9fd8b6; --c-blue: #9fc3ea; --c-teal: #98d6cf;
+  --work: #9fd8b6; --rest: #9fc3ea; --prep: #e9d08f; --brand: #e9d08f; }
+/* landscape: ring beside the details, controls along the bottom */
+@media (orientation: landscape) and (max-height: 560px) {
+  .run { padding-top: calc(8px + env(safe-area-inset-top, 0px)); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .run-mid { grid-template-columns: auto minmax(0, 16rem); column-gap: 28px; justify-content: center; }
+  .run-mid .ring { grid-row: span 3; width: min(62vh, 300px); }
+  .clock { font-size: clamp(3.2rem, 17vh, 6rem); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } .flash.on { animation: none; } }
 </style>
 </head>
 <body>
@@ -220,23 +238,41 @@ const TEMPLATES = [
   { id: 't-emom', group: 'HIIT & Cardio', name: 'EMOM 10', desc: 'Every minute on the minute, 10 minutes.', color: 'teal', work: 60, rest: 0, rounds: 10, workLabel: 'Minute' },
   { id: 't-amrap', group: 'HIIT & Cardio', name: 'AMRAP 12', desc: 'As many rounds as possible in 12 minutes.', color: 'orange', work: 720, rest: 0, rounds: 1, workLabel: 'AMRAP' },
   { id: 't-3030', group: 'HIIT & Cardio', name: '30 / 30 Intervals', desc: '30s hard, 30s easy, 10 rounds.', color: 'violet', work: 30, rest: 30, rounds: 10 },
+  { id: 't-emom20', group: 'CrossFit', name: 'EMOM 20', desc: 'A new set at the top of every minute, 20 minutes.', color: 'amber', work: 60, rest: 0, rounds: 20, workLabel: 'Minute' },
+  { id: 't-amrap20', group: 'CrossFit', name: 'AMRAP 20', desc: 'As many rounds as possible in 20 minutes.', color: 'red', work: 1200, rest: 0, rounds: 1, workLabel: 'AMRAP' },
+  { id: 't-fgb', group: 'CrossFit', name: 'Fight Gone Bad', desc: '5 one-minute stations, 3 rounds, 1-minute rest.', color: 'green', work: 60, rest: 60, rounds: 3,
+    stations: ['Wall balls', 'Sumo deadlift high pull', 'Box jumps', 'Push press', 'Row for calories'] },
+  { id: 't-box6030', group: 'Boxing & Martial Arts', name: 'Rounds 60 / 30', desc: '1-minute rounds, 30s rest, 5 rounds.', color: 'orange', work: 60, rest: 30, rounds: 5, workLabel: 'Fight' },
+  { id: 't-boxing', group: 'Boxing & Martial Arts', name: 'Boxing Rounds', desc: '3-minute rounds, 1-minute rest, 12 rounds.', color: 'blue', work: 180, rest: 60, rounds: 12, workLabel: 'Fight' },
   { id: 't-stretch', group: 'Mobility', name: 'Stretch Holds', desc: '30s holds with 5s to switch, 8 holds.', color: 'teal', work: 30, rest: 5, rounds: 8, workLabel: 'Hold', restLabel: 'Switch' },
   { id: 't-plank', group: 'Mobility', name: 'Plank Sets', desc: '60s hold, 60s rest, 3 sets.', color: 'green', work: 60, rest: 60, rounds: 3, workLabel: 'Hold' },
+  { id: 't-cooldown', group: 'Recovery', name: 'Cooldown', desc: '5 minutes of easy movement to bring your heart rate down.', color: 'green', work: 300, rest: 0, rounds: 1, kind: 'rest', workLabel: 'Cool down' },
+  { id: 't-foam', group: 'Recovery', name: 'Foam Rolling', desc: '45s on each area, 10s to move: calves to lats.', color: 'blue', work: 45, rest: 0, rounds: 1, switchSecs: 10, switchLabel: 'Move',
+    stations: ['Calves', 'Hamstrings', 'Quads', 'Glutes', 'Upper back', 'Lats'] },
+  { id: 't-recstretch', group: 'Recovery', name: 'Recovery Stretch', desc: '8 stretches, 30s each, after your workout.', color: 'orange', work: 30, rest: 0, rounds: 1, switchSecs: 5,
+    stations: ['Hamstrings', 'Quads', 'Hip flexors', 'Glutes', 'Chest', 'Lats', 'Shoulders', 'Lower back'] },
+  { id: 't-meditate', group: 'Mind', name: 'Meditation', desc: '10 quiet minutes. One soft tone at the end.', color: 'violet', work: 600, rest: 0, rounds: 1, kind: 'rest', workLabel: 'Breathe', quiet: true },
+  { id: 't-boxbreath', group: 'Mind', name: 'Box Breathing', desc: 'In 4, hold 4, out 4, hold 4. 10 rounds.', color: 'teal', work: 4, rest: 0, rounds: 10, quiet: true, switchSecs: 0,
+    stations: ['Breathe in', 'Hold', 'Breathe out', 'Hold'] },
+  { id: 't-morning', group: 'Mind', name: 'Morning Flow', desc: 'A gentle 8-pose flow, 30s each.', color: 'amber', work: 30, rest: 0, rounds: 1, switchSecs: 5, quiet: true,
+    stations: ['Cat-cow', 'Downward dog', 'Low lunge, left', 'Low lunge, right', "Child's pose", 'Cobra', 'Forward fold', 'Standing reach'] },
 ];
 
 let store = load() || {
   favorites: ['t-quick', 't-standard', 't-heavy', 't-tabata'],
   custom: [],
-  prefs: { sound: true, voice: true, vibrate: true, wake: true, prep: 5 },
+  prefs: { sound: true, voice: true, vibrate: true, wake: true, prep: 5, flash: true, openLast: false, pale: false, beep: 'classic', volume: 'medium', voiceName: '' },
   tab: 'mine',
 };
-store.prefs = Object.assign({ sound: true, voice: true, vibrate: true, wake: true, prep: 5 }, store.prefs || {});
+store.prefs = Object.assign({ sound: true, voice: true, vibrate: true, wake: true, prep: 5, flash: true, openLast: false, pale: false, beep: 'classic', volume: 'medium', voiceName: '' }, store.prefs || {});
+document.documentElement.classList.toggle('pale', !!store.prefs.pale);
 
 /* ---------- helpers ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = secs => { secs = Math.max(0, Math.round(secs)); const m = Math.floor(secs / 60), s = secs % 60; return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); };
-const total = t => t.work * t.rounds + t.rest * Math.max(0, t.rounds - 1);
+const perRound = t => { const n = (t.stations || []).length || 1; return n * t.work + (n - 1) * (t.switchSecs || 0); };
+const total = t => perRound(t) * t.rounds + t.rest * Math.max(0, t.rounds - 1);
 const colorVar = c => `var(--c-${COLORS.includes(c) ? c : 'amber'})`;
 const allTimers = () => TEMPLATES.concat(store.custom);
 const byId = id => allTimers().find(t => t.id === id);
@@ -254,13 +290,22 @@ function cardHTML(t) {
   </div>`;
 }
 function describe(t) {
+  if (t.stations) return `${t.stations.length} stations × ${t.work}s${t.rounds > 1 ? `, ${t.rounds} rounds` : ''}.`;
   if (t.rounds === 1 && !t.rest) return `${fmt(t.work)} countdown.`;
   return `${t.work}s ${(t.workLabel || 'work').toLowerCase()}${t.rest ? `, ${t.rest}s ${(t.restLabel || 'rest').toLowerCase()}` : ''}, ${t.rounds} rounds.`;
 }
 
 /* ---------- views ---------- */
 const CREDIT = `<p style="text-align:center;color:var(--muted);font-size:0.85rem;margin:28px 0 8px">Free by <a href="https://chungalab.github.io" target="_blank" rel="noopener" style="color:var(--muted)">Chunga Lab</a></p>`;
-const TITLES = { mine: ['My Timers', 'Tap a timer to start it'], templates: ['Templates', 'Tap ⋯ to add one to My Timers'], prefs: ['Settings', 'Sound, voice and screen'] };
+const TITLES = { mine: ['My Timers', 'Tap a timer to start it'], templates: ['Templates', 'Tap ⋯ to add one to My Timers'], prefs: ['Settings', 'Sound, screen and display'] };
+let query = '';
+function templateList() {
+  const q = query.trim().toLowerCase();
+  const list = TEMPLATES.filter(t => !q || (t.name + ' ' + t.desc + ' ' + t.group + ' ' + (t.stations || []).join(' ')).toLowerCase().includes(q));
+  if (!list.length) return `<div class="empty" style="margin-top:16px">No templates match "${esc(query)}". Tap <strong>+</strong> to build your own.</div>`;
+  const groups = [...new Set(list.map(t => t.group))];
+  return groups.map(g => `<div class="group-label">${esc(g)}</div><div class="list">${list.filter(t => t.group === g).map(cardHTML).join('')}</div>`).join('');
+}
 
 function render() {
   const tab = store.tab in TITLES ? store.tab : 'mine';
@@ -281,8 +326,8 @@ function render() {
         : `<div class="empty">No saved timers yet. Open <strong>Templates</strong> and add the ones you use, or tap <strong>+</strong> to build your own.</div>`}`;
     v.innerHTML += CREDIT;
   } else if (tab === 'templates') {
-    const groups = [...new Set(TEMPLATES.map(t => t.group))];
-    v.innerHTML = groups.map(g => `<div class="group-label">${esc(g)}</div><div class="list">${TEMPLATES.filter(t => t.group === g).map(cardHTML).join('')}</div>`).join('') + CREDIT;
+    v.innerHTML = `<input class="search" id="tplSearch" type="search" placeholder="Search templates" aria-label="Search templates" value="${esc(query)}" autocomplete="off">
+      <div id="tplList">${templateList()}</div>` + CREDIT;
   } else {
     const p = store.prefs;
     const sw = (id, label, desc) => `<div class="set-row"><div><div class="t" id="${id}-l">${label}</div><div class="d">${desc}</div></div>
@@ -292,8 +337,21 @@ function render() {
       ${sw('pref-voice', 'Voice', 'Calls out "Work", "Rest" and "Done"')}
       ${sw('pref-vibrate', 'Vibration', 'Buzz at each phase change (Android)')}
       ${sw('pref-wake', 'Keep screen on', 'Stops the phone sleeping while a timer runs')}
+      ${sw('pref-flash', 'Screen flash', 'The screen flashes at each change, for loud gyms')}
       <div class="set-row"><div><div class="t">Get-ready countdown</div><div class="d">Before interval timers start</div></div>
         <div class="seg" role="group" aria-label="Get-ready countdown">${[0, 5, 10].map(n => `<button data-prep="${n}" aria-pressed="${p.prep === n}">${n}s</button>`).join('')}</div></div>
+      <div class="group-label">Sound</div>
+      <div class="set-row"><div><div class="t">Beep sound</div></div>
+        <div class="seg" role="group" aria-label="Beep sound">${[['classic', 'Classic'], ['soft', 'Soft'], ['sharp', 'Sharp']].map(([k, l]) => `<button data-beep="${k}" aria-pressed="${p.beep === k}">${l}</button>`).join('')}</div></div>
+      <div class="set-row"><div><div class="t">Volume</div></div>
+        <div class="seg" role="group" aria-label="Volume">${[['low', 'Low'], ['medium', 'Med'], ['high', 'High']].map(([k, l]) => `<button data-volume="${k}" aria-pressed="${p.volume === k}">${l}</button>`).join('')}</div></div>
+      <div class="set-row"><div><div class="t"><label for="voicePick">Voice</label></div><div class="d">The voice that calls out each phase</div></div>
+        <select class="select" id="voicePick">${voiceOptions()}</select></div>
+      <div class="set-row"><div><div class="t">Test</div><div class="d">Hear your beep and voice</div></div>
+        <button class="btn btn-ghost" id="testSound" style="min-height:40px;padding:8px 14px">Play</button></div>
+      <div class="group-label">Display</div>
+      ${sw('pref-pale', 'Pale colours', 'Softer colours on cards and the timer')}
+      ${sw('pref-openLast', 'Open last timer', 'Opens the last timer you used, ready to start')}
       <div class="group-label">App</div>
       <div class="set-row"><div><div class="t">Install as an app</div><div class="d" id="installHelp">${window.rrStandalone ? 'Installed. You are using the app.' : 'Adds a Rest &amp; Rounds icon to your home screen.'}</div></div>
         ${window.rrStandalone ? '' : '<button class="btn btn-primary" id="installRow" style="min-height:40px;padding:8px 14px">Install</button>'}</div>
@@ -380,18 +438,36 @@ function openEditor(t) {
 /* ---------- sound, voice, vibration, wake lock ---------- */
 let actx = null;
 function unlockAudio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {} }
-function tone(freq, dur, when = 0, vol = 0.22) {
+const VOLUME = { low: 0.1, medium: 0.22, high: 0.42 };
+const BEEP = { classic: { type: 'square', mult: 1 }, soft: { type: 'sine', mult: 0.75 }, sharp: { type: 'sawtooth', mult: 1.25 } };
+function tone(freq, dur, when = 0, volScale = 1) {
   if (!store.prefs.sound || !actx) return;
   try {
+    const b = BEEP[store.prefs.beep] || BEEP.classic, vol = (VOLUME[store.prefs.volume] || 0.22) * volScale;
     const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + when;
-    o.type = 'square'; o.frequency.value = freq;
+    o.type = b.type; o.frequency.value = freq * b.mult;
     g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
     o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
   } catch (e) {}
 }
 function say(text) {
   if (!store.prefs.voice || !('speechSynthesis' in window)) return;
-  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {}
+  try {
+    speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find(x => x.name === store.prefs.voiceName); if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function voiceOptions() {
+  let voices = [];
+  try { voices = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); } catch (e) {}
+  return `<option value="">Phone default</option>` + voices.map(v => `<option value="${esc(v.name)}" ${v.name === store.prefs.voiceName ? 'selected' : ''}>${esc(v.name.replace(/^(Google|Microsoft)\s*/, ''))} (${esc(v.lang)})</option>`).join('');
+}
+try { speechSynthesis.addEventListener('voiceschanged', () => { const sel = document.getElementById('voicePick'); if (sel) sel.innerHTML = voiceOptions(); }); } catch (e) {}
+function flash() {
+  if (!store.prefs.flash) return;
+  const f = document.getElementById('flash'); if (!f) return;
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
 }
 function buzz(p) { if (store.prefs.vibrate) try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
 let wakeLock = null;
@@ -406,23 +482,38 @@ function buildSegments(t) {
   const prep = t.kind === 'rest' ? 0 : store.prefs.prep;
   if (prep > 0) segs.push({ kind: 'prep', label: 'Get ready', secs: prep, round: 0 });
   for (let r = 1; r <= t.rounds; r++) {
-    segs.push({ kind: t.kind === 'rest' ? 'rest' : 'work', label: t.kind === 'rest' ? 'Rest' : (t.workLabel || 'Work'), secs: t.work, round: r });
+    if (t.stations && t.stations.length) {
+      t.stations.forEach((name, k) => {
+        segs.push({ kind: 'work', label: name, secs: t.work, round: r, station: k + 1 });
+        if (t.switchSecs > 0 && k < t.stations.length - 1) segs.push({ kind: 'rest', label: t.switchLabel || 'Switch', secs: t.switchSecs, round: r });
+      });
+    } else {
+      segs.push({ kind: t.kind === 'rest' ? 'rest' : 'work', label: t.kind === 'rest' ? (t.workLabel || 'Rest') : (t.workLabel || 'Work'), secs: t.work, round: r });
+    }
     if (t.rest > 0 && r < t.rounds) segs.push({ kind: 'rest', label: t.restLabel || 'Rest', secs: t.rest, round: r });
   }
   return segs;
 }
 const PHASE_COLOR = { work: 'var(--work)', rest: 'var(--rest)', prep: 'var(--prep)', done: 'var(--brand)' };
 
-function startTimer(t) {
-  unlockAudio(); wakeOn();
+function startTimer(t, opts = {}) {
   const segs = buildSegments(t);
+  try { store.last = t; persist(); } catch (e) {}
+  if (opts.ready) {
+    // Opened at launch: wait for a tap, since phones only allow sound after one.
+    run = { t, segs, i: 0, end: 0, left: segs[0].secs * 1000, running: false, ready: true, beeped: {}, id: setInterval(tick, 100) };
+    drawRun(); return;
+  }
+  unlockAudio(); wakeOn();
   run = { t, segs, i: 0, end: performance.now() + segs[0].secs * 1000, left: null, running: true, beeped: {}, id: null };
   drawRun(); announce(segs[0]);
   run.id = setInterval(tick, 100);
 }
 function announce(seg) {
-  if (seg.kind === 'work') { tone(1046, 0.35); say(seg.label === 'Work' ? 'Go' : seg.label); buzz([250]); }
-  else if (seg.kind === 'rest') { tone(523, 0.45); say(seg.label); buzz([120, 80, 120]); }
+  const quiet = run && run.t.quiet;
+  if (quiet) { if (seg.kind !== 'prep') { tone(660, 0.25, 0, 0.5); say(seg.label); } else say('Get ready'); return; }
+  if (seg.kind === 'work') { tone(1046, 0.35); say(seg.label === 'Work' ? 'Go' : seg.label); buzz([250]); flash(); }
+  else if (seg.kind === 'rest') { tone(523, 0.45); say(seg.label); buzz([120, 80, 120]); flash(); }
   else { say('Get ready'); }
 }
 function remainingMs() { return run.running ? run.end - performance.now() : run.left; }
@@ -434,22 +525,23 @@ function tick() {
     run.i++; const seg = run.segs[run.i];
     run.end += seg.secs * 1000; run.beeped = {};
     rem = run.end - performance.now();
-    if (rem > 0) announce(seg);
+    if (rem > 0) { drawRun(); announce(seg); }
   }
   const s = Math.ceil(rem / 1000);
-  if (s <= 3 && s >= 1 && !run.beeped[s] && run.segs[run.i].secs > 3) { run.beeped[s] = true; tone(784, 0.12); }
+  if (s <= 3 && s >= 1 && !run.beeped[s] && run.segs[run.i].secs > 3 && !run.t.quiet) { run.beeped[s] = true; tone(784, 0.12); }
   paint(rem);
 }
 function finish() {
   clearInterval(run.id); run.running = false; run.done = true;
-  tone(1046, 0.18, 0); tone(1046, 0.18, 0.25); tone(1318, 0.5, 0.5); say('Done'); buzz([300, 100, 300]);
+  if (run.t.quiet) tone(660, 0.9, 0, 0.5); else { tone(1046, 0.18, 0); tone(1046, 0.18, 0.25); tone(1318, 0.5, 0.5); }
+  say('Done'); buzz([300, 100, 300]); setTimeout(flash, 0);
   wakeOff(); drawRun();
 }
 function stopRun() { if (run) clearInterval(run.id); run = null; wakeOff(); try { speechSynthesis.cancel(); } catch (e) {} closeLayer(); }
 function togglePause() {
   if (!run || run.done) return;
   if (run.running) { run.left = run.end - performance.now(); run.running = false; wakeOff(); }
-  else { unlockAudio(); run.end = performance.now() + run.left; run.running = true; wakeOn(); }
+  else { unlockAudio(); run.end = performance.now() + run.left; run.running = true; wakeOn(); if (run.ready) { run.ready = false; const sg = run.segs[run.i]; setTimeout(() => announce(sg), 0); } }
   drawRun();
 }
 function skip() {
@@ -458,7 +550,7 @@ function skip() {
   run.i++; const seg = run.segs[run.i];
   run.beeped = {};
   if (run.running) run.end = performance.now() + seg.secs * 1000; else run.left = seg.secs * 1000;
-  announce(seg); drawRun();
+  drawRun(); announce(seg);
 }
 function adjust(sec) {
   if (!run || run.done) return;
@@ -468,6 +560,12 @@ function adjust(sec) {
 }
 
 const CIRC = 2 * Math.PI * 92;
+function roundText(t, seg) {
+  const parts = [];
+  if (t.stations && seg.station) parts.push(`Station ${seg.station} of ${t.stations.length}`);
+  if (t.rounds > 1 && seg.round) parts.push(`Round ${seg.round} of ${t.rounds}`);
+  return parts.length ? parts.join(' · ') : '&nbsp;';
+}
 function drawRun() {
   const t = run.t, seg = run.segs[run.i];
   const kind = run.done ? 'done' : seg.kind;
@@ -475,6 +573,7 @@ function drawRun() {
   const next = run.segs[run.i + 1];
   $('#layer').innerHTML = `
   <section class="run" style="--phase:${PHASE_COLOR[kind]}" aria-label="${esc(t.name)} running">
+    <div class="flash" id="flash" aria-hidden="true"></div>
     <div class="run-top">
       <div class="run-title">${esc(t.name)}</div>
       <button class="icon-btn" data-run="stop" aria-label="Close timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -485,7 +584,7 @@ function drawRun() {
         <div class="ring-inner">
           <div class="phase">${run.done ? 'Done' : esc(seg.label)}</div>
           <div class="clock" id="clock" role="timer" aria-live="off">${run.done ? '00:00' : fmt(seg.secs)}</div>
-          <div class="round">${run.done ? `${fmt(total(t))} complete` : (workRounds > 1 && seg.round ? `Round ${seg.round} of ${workRounds}` : '&nbsp;')}</div>
+          <div class="round">${run.done ? `${fmt(total(t))} complete` : roundText(t, seg)}</div>
         </div>
       </div>
       <div class="next">${run.done ? 'Nice work.' : next ? `Next: ${esc(next.label)} ${fmt(next.secs)}` : 'Last one'}</div>
@@ -494,7 +593,7 @@ function drawRun() {
     <div class="run-controls">
       ${run.done
         ? `<button class="btn btn-ghost" data-run="stop">Close</button><button class="btn btn-primary" data-run="again">Again</button><span></span>`
-        : `<button class="btn btn-ghost" data-run="stop">Stop</button><button class="btn btn-primary" data-run="pause">${run.running ? 'Pause' : 'Resume'}</button><button class="btn btn-ghost" data-run="skip">Skip</button>`}
+        : `<button class="btn btn-ghost" data-run="stop">Stop</button><button class="btn btn-primary" data-run="pause">${run.ready ? 'Start' : run.running ? 'Pause' : 'Resume'}</button><button class="btn btn-ghost" data-run="skip">Skip</button>`}
     </div>
   </section>`;
   if (!run.done) paint(remainingMs()); else $('#arc').style.strokeDashoffset = 0;
@@ -537,13 +636,23 @@ $('#view').addEventListener('click', e => {
   if (card) { const t = byId(card.dataset.start); if (t) startTimer(t); }
   const prep = e.target.closest('[data-prep]');
   if (prep) { store.prefs.prep = +prep.dataset.prep; persist(); render(); }
+  const beep = e.target.closest('[data-beep]');
+  if (beep) { store.prefs.beep = beep.dataset.beep; persist(); render(); unlockAudio(); tone(880, 0.15); }
+  const vol = e.target.closest('[data-volume]');
+  if (vol) { store.prefs.volume = vol.dataset.volume; persist(); render(); unlockAudio(); tone(880, 0.15); }
+  if (e.target.id === 'testSound') { unlockAudio(); tone(784, 0.12); tone(784, 0.12, 0.35); tone(1046, 0.35, 0.7); setTimeout(() => say('Rest'), 1100); }
 });
 $('#view').addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-start]')) { e.preventDefault(); e.target.click(); }
 });
+$('#view').addEventListener('input', e => {
+  if (e.target.id === 'tplSearch') { query = e.target.value; $('#tplList').innerHTML = templateList(); }
+});
 $('#view').addEventListener('change', e => {
+  if (e.target.id === 'voicePick') { store.prefs.voiceName = e.target.value; persist(); say('Rest'); return; }
   const k = e.target.dataset.pref; if (!k) return;
   store.prefs[k] = e.target.checked; persist();
+  if (k === 'pale') document.documentElement.classList.toggle('pale', e.target.checked);
   if (k === 'sound' && e.target.checked) { unlockAudio(); tone(880, 0.12); }
   if (k === 'voice' && e.target.checked) say('Voice on');
 });
@@ -564,6 +673,7 @@ document.addEventListener('keydown', e => {
 });
 
 render();
+if (store.prefs.openLast && store.last && store.last.work) { try { startTimer(store.last, { ready: true }); } catch (e) {} }
 </script>
 
 
