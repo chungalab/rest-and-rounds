@@ -1,5 +1,5 @@
 // Bump VERSION whenever you change a file: the app then shows "Update available".
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'rest-rounds-' + VERSION;
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))));

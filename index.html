@@ -291,6 +291,9 @@ function render() {
       ${sw('pref-wake', 'Keep screen on', 'Stops the phone sleeping while a timer runs')}
       <div class="set-row"><div><div class="t">Get-ready countdown</div><div class="d">Before interval timers start</div></div>
         <div class="seg" role="group" aria-label="Get-ready countdown">${[0, 5, 10].map(n => `<button data-prep="${n}" aria-pressed="${p.prep === n}">${n}s</button>`).join('')}</div></div>
+      <div class="group-label">App</div>
+      <div class="set-row"><div><div class="t">Install as an app</div><div class="d" id="installHelp">${window.rrStandalone ? 'Installed. You are using the app.' : 'Adds a Rest &amp; Rounds icon to your home screen.'}</div></div>
+        ${window.rrStandalone ? '' : '<button class="btn btn-primary" id="installRow" style="min-height:40px;padding:8px 14px">Install</button>'}</div>
       <div class="group-label">About</div>
       <div class="empty">Timers and settings are saved in this browser on this phone. Beeps can't play while the phone is locked, so keep the screen on during a timer.</div>`;
   }
@@ -501,6 +504,14 @@ document.querySelector('nav.bottom').addEventListener('click', e => {
   store.tab = b.dataset.tab; persist(); render(); window.scrollTo(0, 0);
 });
 $('#newBtn').addEventListener('click', () => openEditor(null));
+document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'installRow') {
+    if (!(window.rrInstall && window.rrInstall())) {
+      const h = document.getElementById('installHelp');
+      if (h) h.textContent = 'In Chrome, tap ⋮ (top right), then "Install app" or "Add to home screen", then Install.';
+    }
+  }
+});
 $('#view').addEventListener('click', e => {
   const menu = e.target.closest('[data-menu]');
   if (menu) { e.stopPropagation(); return openMenu(menu.dataset.menu); }
@@ -539,6 +550,38 @@ document.addEventListener('keydown', e => {
 render();
 </script>
 
+
+
+<div id="installBar" hidden style="position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:70;max-width:528px;margin:0 auto;background:var(--surface-2);border:1px solid var(--brand);border-radius:16px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+  <div style="min-width:0"><div style="font-weight:600">Install Rest &amp; Rounds</div><div style="color:var(--muted);font-size:0.85rem">Its own icon, full screen, works offline.</div></div>
+  <div style="display:flex;gap:6px;flex:none"><button id="installLater" class="btn btn-ghost" style="min-height:40px;padding:8px 12px">Later</button><button id="installBtn" class="btn btn-primary" style="min-height:40px;padding:8px 14px">Install</button></div>
+</div>
+<script>
+// Chrome fires beforeinstallprompt when the app can be installed: show our own button for it.
+(function () {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let deferred = null;
+  const bar = document.getElementById('installBar');
+  const dismissed = () => { try { return localStorage.getItem('rr_install_later') === '1'; } catch (e) { return false; } };
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferred = e;
+    if (!standalone && !dismissed()) bar.hidden = false;
+    window.rrCanInstall = true;
+  });
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    try { await deferred.userChoice; } catch (e) {}
+    deferred = null; bar.hidden = true;
+  });
+  document.getElementById('installLater').addEventListener('click', () => {
+    bar.hidden = true; try { localStorage.setItem('rr_install_later', '1'); } catch (e) {}
+  });
+  window.addEventListener('appinstalled', () => { bar.hidden = true; });
+  window.rrInstall = () => { if (deferred) { deferred.prompt(); deferred = null; bar.hidden = true; return true; } return false; };
+  window.rrStandalone = standalone;
+})();
+</script>
 
 <div id="updateBar" hidden style="position:fixed;left:16px;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:80;background:var(--brand);color:var(--brand-ink);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:600">
   <span>Update available</span><button id="updateBtn" class="btn" style="background:var(--brand-ink);color:var(--brand);min-height:40px;padding:8px 14px">Refresh</button>
