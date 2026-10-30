@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rest &amp; Rounds</title>
 <meta name="theme-color" content="#13161b">
-<meta name="description" content="Gym rest and interval timer">
+<meta name="description" content="Rest & Rounds: a free gym rest and interval timer by Chunga Lab.">
+<meta name="author" content="Chunga Lab">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -258,6 +259,7 @@ function describe(t) {
 }
 
 /* ---------- views ---------- */
+const CREDIT = `<p style="text-align:center;color:var(--muted);font-size:0.85rem;margin:28px 0 8px">Free by <a href="https://chungalab.github.io" target="_blank" rel="noopener" style="color:var(--muted)">Chunga Lab</a></p>`;
 const TITLES = { mine: ['My Timers', 'Tap a timer to start it'], templates: ['Templates', 'Tap ⋯ to add one to My Timers'], prefs: ['Settings', 'Sound, voice and screen'] };
 
 function render() {
@@ -277,9 +279,10 @@ function render() {
       <div class="group-label">Saved</div>
       ${mine.length ? `<div class="list">${mine.map(cardHTML).join('')}</div>`
         : `<div class="empty">No saved timers yet. Open <strong>Templates</strong> and add the ones you use, or tap <strong>+</strong> to build your own.</div>`}`;
+    v.innerHTML += CREDIT;
   } else if (tab === 'templates') {
     const groups = [...new Set(TEMPLATES.map(t => t.group))];
-    v.innerHTML = groups.map(g => `<div class="group-label">${esc(g)}</div><div class="list">${TEMPLATES.filter(t => t.group === g).map(cardHTML).join('')}</div>`).join('');
+    v.innerHTML = groups.map(g => `<div class="group-label">${esc(g)}</div><div class="list">${TEMPLATES.filter(t => t.group === g).map(cardHTML).join('')}</div>`).join('') + CREDIT;
   } else {
     const p = store.prefs;
     const sw = (id, label, desc) => `<div class="set-row"><div><div class="t" id="${id}-l">${label}</div><div class="d">${desc}</div></div>
@@ -294,8 +297,14 @@ function render() {
       <div class="group-label">App</div>
       <div class="set-row"><div><div class="t">Install as an app</div><div class="d" id="installHelp">${window.rrStandalone ? 'Installed. You are using the app.' : 'Adds a Rest &amp; Rounds icon to your home screen.'}</div></div>
         ${window.rrStandalone ? '' : '<button class="btn btn-primary" id="installRow" style="min-height:40px;padding:8px 14px">Install</button>'}</div>
+      <div class="set-row"><div><div class="t">Share with your gym mates</div><div class="d" id="shareHelp">chungalab.github.io/rest-and-rounds</div></div>
+        <button class="btn btn-ghost" id="shareRow" style="min-height:40px;padding:8px 14px">Share</button></div>
       <div class="group-label">About</div>
-      <div class="empty">Timers and settings are saved in this browser on this phone. Beeps can't play while the phone is locked, so keep the screen on during a timer.</div>`;
+      <div class="empty">
+        <div style="color:var(--fg);font-weight:600;margin-bottom:4px">Rest &amp; Rounds · free, no sign-up, no ads</div>
+        Built by <a href="https://chungalab.github.io" target="_blank" rel="noopener" style="color:var(--brand)">Chunga Lab</a>, so anyone can time their training without paying for a timer app.
+        <div style="margin-top:10px">Timers and settings are saved on this phone. Beeps can't play while the phone is locked, so keep the screen on during a timer.</div>
+      </div>`;
   }
 }
 
@@ -505,10 +514,17 @@ document.querySelector('nav.bottom').addEventListener('click', e => {
 });
 $('#newBtn').addEventListener('click', () => openEditor(null));
 document.addEventListener('click', e => {
+  if (e.target && e.target.id === 'shareRow') {
+    const url = 'https://chungalab.github.io/rest-and-rounds/';
+    const text = 'Rest & Rounds: a free gym rest and interval timer by Chunga Lab. Install it from';
+    const h = document.getElementById('shareHelp');
+    if (navigator.share) { navigator.share({ title: 'Rest & Rounds', text, url }).catch(() => {}); }
+    else if (navigator.clipboard) { navigator.clipboard.writeText(text + ' ' + url).then(() => { if (h) h.textContent = 'Link copied. Paste it in WhatsApp.'; }).catch(() => { if (h) h.textContent = url; }); }
+  }
   if (e.target && e.target.id === 'installRow') {
     if (!(window.rrInstall && window.rrInstall())) {
       const h = document.getElementById('installHelp');
-      if (h) h.textContent = 'In Chrome, tap ⋮ (top right), then "Install app" or "Add to home screen", then Install.';
+      if (h) h.textContent = 'Already installed, or Chrome needs a moment. Otherwise tap ⋮ (top right) → "Add to home screen" → Install.';
     }
   }
 });
